@@ -1,0 +1,54 @@
+pygame
+
+7 4:[(6, 4), (7, 3), (7, 5), (6, 3), (6, 5)]
+
+
+
+def handle_player_pieces(current_player, mouse_pos, piece_to_move, only_moves, invalid):
+    invalid_move = False
+
+
+    for i in range(8):
+            for j in range(8):
+                if bo.board[i][j] != 0:
+                    # print()
+                    if bo.board[i][j].color == current_player.color and bo.board[i][j].isSelected(mouse_pos):
+                        piece = bo.board[i][j]
+                        attack_moves = piece.attack_moves
+                        valid_moves = piece.valid_moves(bo)
+                        pos = piece.get_pos()
+
+                        # for inval in invalid:
+                        #     if inval.isSelected(mouse_pos, piece):
+                        #         piece.selected = False
+                        #         invalid_move = True
+                        
+                        if (pos in invalid) and not(pos in bo.valid_piece_pos):
+                            piece.selected = False
+                            continue
+
+                        if (pos in  bo.valid_piece_pos) and not (pos in invalid):
+                            bo.block_check.append(pos)
+
+                        
+
+
+                        if pos in bo.block_check:
+                            bo.simulate_move(piece.color, piece)
+                            
+                            piece.selected = False if piece.block_check else True
+
+
+                            
+                        if not(bo.check) and not(piece.block_check):
+                            set_piece_to_move(piece, piece_to_move, valid_moves, attack_moves, invalid_move)
+
+                        
+                        elif  pos in bo.valid_piece_pos and bo.check or (pos in invalid):
+                            set_piece_to_move(p, piece_to_move, only_moves[piece], [], invalid_move)
+    
+    block_check = handle_check_and_invalid(only_moves, piece_to_move, mouse_pos, invalid)
+
+    print(piece_to_move)
+        
+    return block_check
