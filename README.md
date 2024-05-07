@@ -21,4 +21,4 @@ Have the Pygame module installed and run game.py
 Not for commercial use
 
 # Credit:
-Techwithtim
+me
