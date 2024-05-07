@@ -1,6 +1,5 @@
 '''
 the main game
-author:@techwithtim
 requirements:see requirements.txt
 '''
 
