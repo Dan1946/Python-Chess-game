@@ -151,7 +151,7 @@ class Piece:
         clock = pygame.time.Clock()
 
         # Define movement speed
-        speed = 30
+        speed = 20
 
         while True:
             # Calculate movement vector
@@ -247,28 +247,28 @@ class King(Piece):
                 if board[i][j] != 0:
                     if board[i][j].color != self.color:
                         opp_piece = board[i][j]
-                        # print(f"{opp_piece}:{opp_piece.move_list}")
+                        # #print(f"{opp_piece}:{opp_piece.move_list}")
                         
                         if opp_piece.pawn:
                             enemy_moves.extend(opp_piece.diag_assualt)
                             enemy_moves.extend(opp_piece.protected_pos)
 
-                            # print(f"p {opp_piece}:{opp_piece.diag_assualt}")
+                            # #print(f"p {opp_piece}:{opp_piece.diag_assualt}")
                         
                         else:
                             enemy_moves.extend(opp_piece.move_list)
                             enemy_moves.extend(opp_piece.protected_pos)
-                            # print(f"p {opp_piece}:{opp_piece.move_list}")
+                            # #print(f"p {opp_piece}:{opp_piece.move_list}")
                         
-        # print(enemy_moves, "enme")
+        # #print(enemy_moves, "enme")
         for move in valid_moves[:]:
             i, j = move
             if move in enemy_moves:
-                print("remove")
+                #print("remove")
                 valid_moves.remove(move)
             
             if move in self.include_k_m and self.detected and move in valid_moves:
-                print(self.include_k_m, "worked")
+                #print(self.include_k_m, "worked")
                 self.detected = False
                 valid_moves.remove(move)
                 # self.include_k_m.clear()
@@ -277,8 +277,9 @@ class King(Piece):
                 if board[i][j].color != self.color and move in valid_moves:
                     self.attack_moves.append(move)
 
-            
-        if not(len(valid_moves)):
+        # Stalemate code
+        all_pieces_inactive = bo.all_pieces_inactive(self.color)   
+        if not(len(valid_moves)) and all_pieces_inactive:
             bo.stalemate = True
         
         # self.move_list.extend(valid_moves)
@@ -349,14 +350,14 @@ class King(Piece):
             #             for direc in path:
             #                 if move not in direc and move in piece.move_list:
             #                     piece.move_list.remove(move)
-            #                     print(move, "removed....")
+            #                     #print(move, "removed....")
                 
             #     if len(piece.move_list):
             #         bo.prevent_block.remove(piece)
                 
          
-            print(bo.prevent_block)
-            print(bo.invalid_lst)
+            # #print(bo.prevent_block)
+            # #print(bo.invalid_lst)
 
 
 
@@ -407,7 +408,7 @@ class Knight(Piece):
                     self.attack_moves.append(move)
 
         self.move_list.extend(valid_moves)
-        # print(f"{self}:{self.protected_pos}", "proct")
+        # #print(f"{self}:{self.protected_pos}", "proct")
 
 
         
@@ -423,7 +424,7 @@ class Pawn(Piece):
         self.queen = False
         self.pawn = True
         self.square_symbol = "P" if self.color == "w" else "p"
-        self.promoted = "-"
+        self.promoted = ""
 
 
 class Queen(Piece):

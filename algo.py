@@ -2,7 +2,7 @@
 
 def dfs_movement(piece, bo):
     start_pos = (piece.row, piece.col)
-    # print(start_pos)
+    # #print(start_pos)
 
     stack = [start_pos]
     grid = bo.board
@@ -10,9 +10,9 @@ def dfs_movement(piece, bo):
     direction_moves = {direc: [] for direc in directions}
     d_m = {direc: [] for direc in directions}
 
-    # print("algo-working")
+    # #print("algo-working")
     for direction in directions:
-        # print(direction)
+        # #print(direction)
         visited = set()
         while len(stack):
             row, col = stack.pop()
@@ -25,7 +25,7 @@ def dfs_movement(piece, bo):
 
             if value is not piece and value != 0:
                 if value.color == piece.color:
-                    # print("skip")
+                    # #print("skip")
                     d_m[direction].append((row, col))
                     
                     continue
@@ -50,13 +50,13 @@ def dfs_movement(piece, bo):
 
                     elif (piece.queen or piece.rook or piece.bishop) and value.king: 
                         piece.detect_k = True
-                        # print("stop him")
+                        # #print("stop him")
                         
                         # bo.check = True
 
             
             visited.add((row, col))
-            # print(visited)
+            # #print(visited)
 
             if (row, col) != start_pos:
                 direction_moves[direction].append((row, col))
@@ -64,10 +64,10 @@ def dfs_movement(piece, bo):
            
 
             neighbours = find_neighbours(grid, piece, row, col, direction)
-            # print(neighbours, "bad")
+            # #print(neighbours, "bad")
 
             # if not(len(neighbours)):
-            #     print("not possible")
+            #     #print("not possible")
             #     break
             if value != 0:
                 if piece.detect_k and len(neighbours) and value.king:
@@ -88,7 +88,7 @@ def dfs_movement(piece, bo):
     get_proct_pos(piece, valid_m, grid)
     
     valid_moves = filter_moves(piece, direction_moves, directions, bo)
-    # print(direction_moves)
+    # #print(direction_moves)
     return valid_moves
 
 
@@ -307,7 +307,7 @@ def filter_moves(piece, direc_moves, direcs, bo, reset = False):
                 for direction in total:
                     if pos in direction:
                         piece.direction = direction
-                        # print(f"{piece}:{piece.direction}", "direct")
+                        # #print(f"{piece}:{piece.direction}", "direct")
 
     if reset:
         piece.attack_moves = []
@@ -338,16 +338,16 @@ def get_proct_pos(piece, valid_m, grid):
 
 def dfs_movement_king(piece, bo):
     start_pos = (piece.row, piece.col)
-    # print(start_pos)
+    # #print(start_pos)
 
     stack = [start_pos]
     grid = bo.board
     directions = ["up", "down", "left", "right", "up-l-d", "down-l-d", "up-r-d", "down-r-d"]
     direction_moves = {direc: [] for direc in directions}
 
-    # print("algo-working")
+    # #print("algo-working")
     for direction in directions:
-        # print(direction)
+        # #print(direction)
         visited = set()
         while len(stack):
             row, col = stack.pop()
@@ -359,7 +359,7 @@ def dfs_movement_king(piece, bo):
                         # bo.check = True
             
             visited.add((row, col))
-            # print(visited)
+            # #print(visited)
 
             if (row, col) != start_pos:
                 direction_moves[direction].append((row, col))
@@ -373,13 +373,13 @@ def dfs_movement_king(piece, bo):
         
         stack.append(start_pos)
     
-    # print(direction_moves)
+    # #print(direction_moves)
     return direction_moves
 
     
         
     
-    # print(f"{piece}:{piece.protected_pos}", "proct")
+    # #print(f"{piece}:{piece.protected_pos}", "proct")
 
 
     

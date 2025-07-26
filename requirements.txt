@@ -11,7 +11,7 @@ def handle_player_pieces(current_player, mouse_pos, piece_to_move, only_moves, i
     for i in range(8):
             for j in range(8):
                 if bo.board[i][j] != 0:
-                    # print()
+                    # #print()
                     if bo.board[i][j].color == current_player.color and bo.board[i][j].isSelected(mouse_pos):
                         piece = bo.board[i][j]
                         attack_moves = piece.attack_moves
@@ -49,6 +49,6 @@ def handle_player_pieces(current_player, mouse_pos, piece_to_move, only_moves, i
     
     block_check = handle_check_and_invalid(only_moves, piece_to_move, mouse_pos, invalid)
 
-    print(piece_to_move)
+    #print(piece_to_move)
         
     return block_check

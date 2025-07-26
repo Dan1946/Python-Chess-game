@@ -4,18 +4,21 @@ import chess
 import subprocess
 from stockfish import Stockfish
 import pygame
+from constants import win
 
 
-stockfish = Stockfish(path=r"C:\Users\Daniel Oni\Documents\stockfish\stockfish-windows-x86-64-avx2.exe", depth=11, parameters={"Threads": 2, "Minimum Thinking Time": 30}) # 18
-stockfish2 = Stockfish(path=r"C:\Users\Daniel Oni\Documents\stockfish\stockfish-windows-x86-64-avx2.exe", depth=11, parameters={"Threads": 2, "Minimum Thinking Time": 30})
+LCO_PATH = r"C:\Users\Daniel Oni\Documents\Lc0\lc0.exe"
+stockfish = Stockfish(path=r"C:\Users\Daniel Oni\Documents\stockfish\stockfish-windows-x86-64-avx2.exe", depth=22, parameters={"Threads": 2, "Minimum Thinking Time": 30}) # 18
+stockfish2 = Stockfish(path=r"C:\Users\Daniel Oni\Documents\stockfish\stockfish-windows-x86-64-avx2.exe", depth=20, parameters={"Threads": 2, "Minimum Thinking Time": 30})
 # stockfish2.set_elo_rating(2500)
 
 def board_to_fen(board):
-    """
+    """s
     Convert a chessboard to FEN (Forsyth-Edwards Notation) format.
     """
     fen = ""
     empty_count = 0
+    castle = "-"
 
     # Iterate over each row of the board
     for row in board.board:
@@ -31,9 +34,12 @@ def board_to_fen(board):
                 # Add the piece symbol to the FEN string
                 fen += square.square_symbol # Assuming each piece object has a method 'symbol' that returns its FEN symbol
 
-                if square.pawn:
-                    fen += square.promoted
-                    square.promoted = ""
+                # if square.pawn:
+                #     fen += square.promoted
+                #     square.promoted = ""
+            
+                if square.king and square.first:
+                     castle = "KQkq"
         # If there are empty squares at the end of the row, add the count to the FEN string
         if empty_count > 0:
             fen += str(empty_count)
@@ -46,7 +52,7 @@ def board_to_fen(board):
 
     # Add additional FEN components for active color, castling rights, en passant square, halfmove clock, and fullmove number
     fen += " " + board.turn
-    fen += " " + "-"
+    fen += " " + castle
     fen += " " + "-"  # en passant
     fen += " " + str(board.halfmove_clock)
     fen += " " + str(board.fullmove_number)
@@ -63,9 +69,9 @@ def minimax(position, depth, alpha, beta, max_player):
         maxEval = float('-inf')
         best_move = None
         current_chosen_move = None
-        for move in get_all_moves(position, "b"):
+        for move in get_all_moves(position, "w"):
             evaluation = minimax(move[0], depth-1, alpha, beta, False)[0]
-            # print(evaluation, "evalw")
+            # #print(evaluation, "evalw")
             maxEval = max(maxEval, evaluation)
             if maxEval >= beta:
                 return maxEval, [current_piece, best_move, current_chosen_move]
@@ -82,9 +88,9 @@ def minimax(position, depth, alpha, beta, max_player):
         minEval = float('inf')
         best_move = None
         opp_chosen_move = None
-        for move in get_all_moves(position, "w"):
+        for move in get_all_moves(position, "b"):
             evaluation = minimax(move[0], depth-1, alpha, beta, True)[0]
-            # print(evaluation, "evalb")
+            # #print(evaluation, "evalb")
             minEval = min(minEval, evaluation)
             if minEval <= alpha:
                 return minEval, [opp_piece, best_move, opp_chosen_move]
@@ -119,6 +125,10 @@ def get_all_moves(position, color):
                 # temp_board.draw(win, color)
                 # pygame.display.update()
                 moves.append([temp_board, piece, new_pos])
+            
+            draw(temp_board)
+    
+
     
     return moves
 
@@ -185,6 +195,18 @@ def get_best_move2(board):
     best_move = stockfish2.get_best_move()
     return best_move
 
+def get_best_move3(board):
+    """
+    Find the best move using Leela-zero.
+    """
+    fen = board_to_fen(board)
+    engine = chess.engine.SimpleEngine.popen_uci(LCO_PATH)
+    result = engine.play(chess.Board(fen), chess.engine.Limit(time=0.08))
+    info = engine.analyse(chess.Board(fen), chess.engine.Limit(time=0.08))
+    evaluation = info["score"]
+    engine.quit()
+    return str(result.move), evaluation
+
 
 def get_piece_and_best_move(bo):
     best_move_s = get_best_move(bo)
@@ -193,10 +215,10 @@ def get_piece_and_best_move(bo):
         return None, None
 
     evaluation = evaluate_position(bo)
-    print("Evaluation:", evaluation)
-    print("Best move:", best_move_s)
+    #print("Evaluation:", evaluation)
+    #print("Best move:", best_move_s)
     start_square = algebraic_to_coordinates(best_move_s[:2])
-    best_move = algebraic_to_coordinates(best_move_s[2:])
+    best_move = algebraic_to_coordinates(best_move_s[2:4])
     row, col = start_square
 
     piece = bo.get_piece(row, col)
@@ -211,10 +233,10 @@ def get_piece_and_best_move2(bo):
         return None, None
 
     evaluation = evaluate_position(bo)
-    print("Evaluation:", evaluation)
-    print("Best move:", best_move_s)
+    #print("Evaluation:", evaluation)
+    #print("Best move:", best_move_s)
     start_square = algebraic_to_coordinates(best_move_s[:2])
-    best_move = algebraic_to_coordinates(best_move_s[2:])
+    best_move = algebraic_to_coordinates(best_move_s[2:4])
     row, col = start_square
 
     piece = bo.get_piece(row, col) 
@@ -223,26 +245,30 @@ def get_piece_and_best_move2(bo):
 
 
 
+def get_piece_and_best_move3(bo):
+    best_move_s, evaluation = get_best_move3(bo)
+
+    if best_move_s is None:
+        return None, None
+
+    # evaluation = evaluate_position(bo)
+    #print("Evaluation:", evaluation)
+    #print("Best move:", best_move_s)
+    start_square = algebraic_to_coordinates(best_move_s[:2])
+    best_move = algebraic_to_coordinates(best_move_s[2:4])
+    row, col = start_square
+
+    piece = bo.get_piece(row, col) 
+
+    return piece, best_move
 
 
 
-# Example usage
-# # current_board = create_initial_board()
-# evaluation = evaluate_position(current_board)
-# best_move = get_best_move(current_board)
-# print("Evaluation:", evaluation)
-# print("Best move:", best_move)
+def draw(bo):
+    bo.draw(win, bo.turn)
+    pygame.display.update()
 
 
-
-
-# # Example usage
-# start_square = "g1"
-# best_move = "f3"
-# start_square_coordinates = algebraic_to_coordinates(start_square)
-# best_move_coordinates = algebraic_to_coordinates(best_move)
-# print("Start square coordinates:", start_square_coordinates)
-# print("Best move coordinates:", best_move_coordinates)
 
 
 

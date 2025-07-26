@@ -31,6 +31,9 @@ game_start_sound = pygame.mixer.Sound(os.path.join("sound", "game-start.mp3"))
 game_end = pygame.USEREVENT + 6
 game_end_sound = pygame.mixer.Sound(os.path.join("sound", "game-end.mp3"))
 
+castle = pygame.USEREVENT + 7
+castle_sound = pygame.mixer.Sound(os.path.join("sound", "castle.mp3"))
+
 
 
 class Board:
@@ -114,7 +117,7 @@ class Board:
         self.storedTime2 = 0
 
         self.winner = None
-        self.stalement = False
+        self.stalemate = False
 
         self.startTime = time.time()
         self.create_tiles()
@@ -181,6 +184,9 @@ class Board:
     def game_end(self):
         return game_end, game_end_sound
     
+    def castle_sound(self):
+        return castle, castle_sound
+    
     def post_move_self(self):
         pygame.event.post(pygame.event.Event(piece_movement))
     
@@ -198,6 +204,9 @@ class Board:
     
     def post_end(self):
         pygame.event.post(pygame.event.Event(game_end))
+    
+    def post_castle(self):
+        pygame.event.post(pygame.event.Event(castle))
     
 
     def is_checked(self, color):
@@ -317,6 +326,20 @@ class Board:
                 return danger_count == len(valid_moves)'''
 
         return False
+
+
+    def is_stalemate(self):
+        black_pieces = self.get_opp_pieces("w")
+        white_pieces = self.get_opp_pieces("b")
+        total = white_pieces + black_pieces
+        all_white_inactive = self.all_pieces_inactive('w')
+        all_black_inactive = self.all_pieces_inactive('b')
+        
+        if (all_white_inactive or all_black_inactive) and not (self.check):
+            self.stalemate = True
+
+        if len(total) == 2:
+            self.stalemate = True
     
 
     def get_opp_pieces(self, color):
@@ -331,6 +354,76 @@ class Board:
                             opp_pieces.append(piece)
         
         return opp_pieces
+    
+
+    def all_pieces_inactive(self, color):
+        all_pieces_inactive = False
+        active = False
+        for i in range(self.rows):
+            for j in range(self.cols):
+                if self.board[i][j] != 0:
+                    if self.board[i][j].color == color:
+                        piece = self.board[i][j]
+                        
+                        if len(piece.move_list):
+                            active = True
+                            break
+            
+                
+            if active:
+                break
+
+        else:
+            all_pieces_inactive = True
+        
+        return all_pieces_inactive
+
+
+
+
+    def flip(self, player_color):
+        if player_color != "w":
+            comp_color = "w"
+        
+        else:
+            comp_color = "b"
+
+        self.board[0][0] = Rook(0, 0, comp_color)
+        self.board[0][1] = Knight(0, 1, comp_color)
+        self.board[0][2] = Bishop(0, 2, comp_color)
+        self.board[0][3] = Queen(0, 3, comp_color)
+        self.board[0][4] = King(0, 4, comp_color)
+        self.board[0][5] = Bishop(0, 5, comp_color)
+        self.board[0][6] = Knight(0, 6, comp_color)
+        self.board[0][7] = Rook(0, 7, comp_color)
+
+        self.board[1][0] = Pawn(1, 0, comp_color)
+        self.board[1][1] = Pawn(1, 1, comp_color)
+        self.board[1][2] = Pawn(1, 2, comp_color)
+        self.board[1][3] = Pawn(1, 3, comp_color)
+        self.board[1][4] = Pawn(1, 4, comp_color)
+        self.board[1][5] = Pawn(1, 5, comp_color)
+        self.board[1][6] = Pawn(1, 6, comp_color)
+        self.board[1][7] = Pawn(1, 7, comp_color)
+
+        self.board[7][0] = Rook(7, 0, player_color)
+        self.board[7][1] = Knight(7, 1, player_color)
+        self.board[7][2] = Bishop(7, 2, player_color)
+        self.board[7][3] = Queen(7, 3, player_color)
+        self.board[7][4] = King(7, 4, player_color)
+        self.board[7][5] = Bishop(7, 5, player_color)
+        self.board[7][6] = Knight(7, 6, player_color)
+        self.board[7][7] = Rook(7, 7, player_color)
+
+        self.board[6][0] = Pawn(6, 0, player_color)
+        self.board[6][1] = Pawn(6, 1, player_color)
+        self.board[6][2] = Pawn(6, 2, player_color)
+        self.board[6][3] = Pawn(6, 3, player_color)
+        self.board[6][4] = Pawn(6, 4, player_color)
+        self.board[6][5] = Pawn(6, 5, player_color)
+        self.board[6][6] = Pawn(6, 6, player_color)
+        self.board[6][7] = Pawn(6, 7, player_color)
+
 
         
 
@@ -420,7 +513,7 @@ class Board:
         return False
     
     def castle(self, piece, pos):
-        castle = True if piece.first and not(self.check) else False
+        castle = True if piece.first and not(self.check) and piece.king else False
         rook = None
     
         if piece.color == "w":
@@ -448,8 +541,8 @@ class Board:
 
         if piece.first and not(self.check) and piece.king:
             opp_pieces = self.get_opp_pieces(piece.color)
-            print(left, 'left')
-            print(right, 'right')
+            #print(left, 'left')
+            #print(right, 'right')
             if pos in left:
                 for opp in opp_pieces:
                     for move in left:
@@ -503,7 +596,7 @@ class Board:
                             self.board[x][y] = 0
                             piece.change_pos(pos)
 
-                            a, b = left[2]
+                            a, b = left[3]
                             self.board[a][b] = value
                             m, n = value.get_pos()
                             self.board[m][n] = 0
@@ -592,11 +685,12 @@ class Board:
 
                 if (row, col) in positions:            
                     self.board[row][col] = Queen(row, col, piece.color)
+                    self.post_promote()
 
 
 
 
-    async def simulate_move(self, piece, move, redraw_gameWindow = None, win = None):
+    def simulate_move(self, piece, move, redraw_gameWindow = None, win = None):
         moved = False
         piece_moved = None
         invalid = False
@@ -622,9 +716,9 @@ class Board:
 
             # if invalid:
             #     continue
-        # print(invalid)
-        print(p)
-        # print(bo.board)
+        # #print(invalid)
+        #print(p)
+        # #print(bo.board)
         if not(invalid):
 
             # piece.rect_i.x = tile.rect.x
@@ -632,18 +726,19 @@ class Board:
             destination = [tile.rect.x, tile.rect.y]
 
         
-            # rook = self.castle(piece, move)
-            rook = None
-            # print(rook)
+            rook = self.castle(piece, move)
+            # rook = None
+            # #print(rook)
             
             if rook is not None:
                 pos = rook.get_pos()
                 til = self.lst_tiles[pos]
                 des = [til.rect.x, til.rect.y]
-                print("castle")
+                #print("castle")
 
                 if redraw_gameWindow != None:
                     piece.animate_piece_movement(destination, win, redraw_gameWindow, self)
+                    self.post_castle()
                     rook.animate_piece_movement(des, win, redraw_gameWindow, self)
 
             if rook is None:
@@ -658,7 +753,7 @@ class Board:
                 self.halfmove_clock += 1
                 
             else:
-                self.halfmove_clock = 0
+                self.halfmove_clock = 0 
 
 
             if piece.color == "b":
@@ -669,7 +764,7 @@ class Board:
                 self.board[i][j] = piece
                 a, b = piece.row, piece.col
                 self.board[a][b] = 0
-                piece.change_pos(move)
+                piece.change_pos(move) 
 
                 self.ai_promotion(piece)
             
@@ -701,7 +796,7 @@ class Board:
                     for direc in self.path:
                         if move not in direc and move in pi.move_list:
                             pi.move_list.remove(move)
-                            print(move, "removed....")
+                            #print(move, "removed....")
             
             if len(pi.move_list):
                 self.prevent_block.remove(pi)
@@ -710,13 +805,13 @@ class Board:
         for i in range(8):
                 for j in range(8):
                     if self.board[i][j] != 0:
-                        # print()
+                        # #print()
                         if self.board[i][j].color == color:
                             piece = self.board[i][j]
                             attack_moves = piece.attack_moves
                             valid_moves = piece.move_list
 
-                            print(valid_moves)
+                            #print(valid_moves)
                             pos = piece.get_pos()
 
                 
@@ -739,9 +834,9 @@ class Board:
         
         if self.check:
             checking = self.checking_piece
-            print(checking)
+            #print(checking)
             piece_attk_or_block = checking.possible_opp_block_or_attk
-            print(piece_attk_or_block)
+            #print(piece_attk_or_block)
 
             for p in self.invalid_lst:
                     if p in piece_attk_or_block:
@@ -764,74 +859,65 @@ class Board:
                     
 
         
-    # def simulate_move(self, color, pos = None):
-    #     only_moves = {}
-    #     invalid_pieces = []
-    #     copy_bo = deepcopy(self)
-    #     copy_bo.update_moves()
-    #     safe_moves = copy_bo.get_safe_moves(color)
-    #     print(safe_moves)
+    def simulate_move_(self, color, pos = None):
+        only_moves = {}
+        invalid_pieces = []
+        copy_bo = deepcopy(self)
+        copy_bo.update_moves()
+        safe_moves = copy_bo.get_safe_moves(color)
+        #print(safe_moves)
 
-    #     for piece in safe_moves:
-    #         former_pos = piece.row, piece.col
+        for piece in safe_moves:
+            former_pos = piece.row, piece.col
 
-    #         for move in safe_moves[piece]:
-    #             i, j = move
-    #             value = copy_bo.board[i][j] 
+            for move in safe_moves[piece]:
+                i, j = move
+                value = copy_bo.board[i][j] 
                 
-    #             # a, b = piece.row, piece.col
-    #             copy_bo.board[i][j] = piece
-    #             a, b = piece.row, piece.col
-    #             copy_bo.board[a][b] = 0
-    #             piece.change_pos(move)
+                # a, b = piece.row, piece.col
+                copy_bo.board[i][j] = piece
+                a, b = piece.row, piece.col
+                copy_bo.board[a][b] = 0
+                piece.change_pos(move)
 
-    #             copy_bo.is_checked(color)
+                copy_bo.is_checked(color)
 
-    #             if not(copy_bo.check):
-    #                 if piece in only_moves:
-    #                     piece.change_pos(former_pos)
-    #                     only_moves[piece].append(move)
-    #                     print('success')
+                if not(copy_bo.check):
+                    if piece in only_moves:
+                        piece.change_pos(former_pos)
+                        only_moves[piece].append(move)
+                        #print('success')
                     
-    #                 else:
-    #                     only_moves[piece] = [move]
+                    else:
+                        only_moves[piece] = [move]
 
-    #             else:
-    #                 if (former_pos not in invalid_pieces):
-    #                     self.invalid_lst.append(former_pos)
+                else:
+                    if (former_pos not in invalid_pieces):
+                        self.invalid_lst.append(former_pos)
 
            
-    #             if value != 0:
-    #                 k, m = value.row, value.col
-    #                 copy_bo.board[i][j] = value
-    #                 copy_bo.board[a][b] = piece
-    #                 piece.change_pos(former_pos)
+                if value != 0:
+                    k, m = value.row, value.col
+                    copy_bo.board[i][j] = value
+                    copy_bo.board[a][b] = piece
+                    piece.change_pos(former_pos)
                 
-    #             else:
-    #                 copy_bo.board[i][j] = 0
-    #                 copy_bo.board[a][b] = piece
-    #                 piece.change_pos(former_pos)
+                else:
+                    copy_bo.board[i][j] = 0
+                    copy_bo.board[a][b] = piece
+                    piece.change_pos(former_pos)
 
         
-    #     for piece in only_moves:
-    #         self.valid_piece_pos.append((piece.get_pos()))
+        for piece in only_moves:
+            self.valid_piece_pos.append((piece.get_pos()))
         
-    #     if pos in self.valid_piece_pos and pos in self.block_check:
-    #         print('off')
-    #         self.block_check.remove(pos)
-    #         # self.block_check.remove()
+        if pos in self.valid_piece_pos and pos in self.block_check:
+            #print('off')
+            self.block_check.remove(pos)
+            # self.block_check.remove()
         
-    #     # for piece in only_moves:
-    #     #     pos = (piece.row, piece.col)
-    #     #     if (piece.row, piece.col) in invalid_pieces:
-    #     #         invalid_pieces.remove(pos)
-        
-    #     print(only_moves)
 
-
-    #     print(invalid_pieces)
-
-    #     return only_moves
+        return only_moves
 
 
 

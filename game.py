@@ -7,7 +7,8 @@ requirements:see requirements.txt
 import subprocess
 import sys
 import get_pip
-from minimax_algo import get_piece_and_best_move, get_piece_and_best_move2
+from minimax_algo import get_piece_and_best_move, get_piece_and_best_move2, get_piece_and_best_move3, minimax
+from piece import Piece
 from constants import win, width, height
 import asyncio
 
@@ -15,28 +16,29 @@ def install(package):
     subprocess.call([sys.executable, "-m", "pip", "install", package])
 
 try:
-    print("[GAME] Trying to import pygame")
+    #print("[GAME] Trying to import pygame")
     import pygame
 except:
-    print("[EXCEPTION] Pygame not installed")
+    #print("[EXCEPTION] Pygame not installed")
 
     try:
-        print("[GAME] Trying to install pygame via pip")
+        #print("[GAME] Trying to install pygame via pip")
         import pip
         install("pygame")
-        print("[GAME] Pygame has been installed")
+        #print("[GAME] Pygame has been installed")
     except:
-        print("[EXCEPTION] Pip not installed on system")
-        print("[GAME] Trying to install pip")
+        #print("[EXCEPTION] Pip not installed on system")
+        #print("[GAME] Trying to install pip")
         get_pip.main()
-        print("[GAME] Pip has been installed")
+        #print("[GAME] Pip has been installed")
         try:
-            print("[GAME] Trying to install pygame")
+            #print("[GAME] Trying to install pygame")
             import pip
             install("pygame")
-            print("[GAME] Pygame has been installed")
+            #print("[GAME] Pygame has been installed")
         except:
-            print("[ERROR 1] Pygame could not be installed")
+            #print("[ERROR 1] Pygame could not be installed")
+            pass
 
 
 import pygame
@@ -52,6 +54,7 @@ board = pygame.transform.scale(pygame.image.load(os.path.join("img","board_alt.p
 chessbg = pygame.image.load(os.path.join("img", "chessbg.png"))
 rect = (113,113,525,525)
 bo = Board(8, 8)
+h_moves = set()
 
 turn = "w"
 
@@ -133,12 +136,12 @@ def click(pos):
 
 
 def set_piece_to_move(piece, piece_to_move, valid_moves, attack_moves, invalid):
-    # print(valid_moves, "valid_moves")
+    # #print(valid_moves, "valid_moves")
 
     # if piece.pawn and len(attack_moves):
     #     valid_moves.extend(attack_moves)
 
-    # print(attack_moves, "attack")
+    # #print(attack_moves, "attack")
 
     if len(piece_to_move) and not(piece in  piece_to_move):
         items = tuple(piece_to_move.items())
@@ -160,17 +163,17 @@ def set_piece_to_move(piece, piece_to_move, valid_moves, attack_moves, invalid):
     elif len(valid_moves) and not(invalid):
         piece_to_move[piece] = valid_moves
         # toggle_piece_attack(piece)
-        # print(valid_moves)
+        # #print(valid_moves)
     
     elif len(attack_moves) and not invalid:
         piece_to_move[piece] = attack_moves
-        # print("att")
+        # #print("att")
         # toggle_piece_attack(piece)
     
     else:
         piece.selected = False
         toggle_piece_attack(piece)
-        # print(valid_moves)
+        # #print(valid_moves)
     
 
     if len(piece_to_move):
@@ -187,14 +190,13 @@ def handle_player_pieces(current_player, mouse_pos, piece_to_move):
     for i in range(8):
             for j in range(8):
                 if bo.board[i][j] != 0:
-                    # print()
+                    # #print()
                     if bo.board[i][j].color == current_player.color and bo.board[i][j].isSelected(mouse_pos):
                         piece = bo.board[i][j]
                         attack_moves = piece.attack_moves
                         valid_moves = piece.move_list
-                        # print(valid_moves)
-                        pos = piece.get_pos()
-
+                        # #print(valid_moves)
+                        
                         # for inval in invalid:
                         #     if inval.isSelected(mouse_pos, piece):
                         #         piece.selected = False
@@ -218,9 +220,9 @@ def handle_player_pieces(current_player, mouse_pos, piece_to_move):
     
     if bo.check:
         checking = bo.checking_piece
-        print(checking)
+        #print(checking)
         piece_attk_or_block = checking.possible_opp_block_or_attk
-        print(piece_attk_or_block)
+        #print(piece_attk_or_block)
 
         for p in bo.invalid_lst:
                 if p in piece_attk_or_block:
@@ -230,14 +232,14 @@ def handle_player_pieces(current_player, mouse_pos, piece_to_move):
         for piece in piece_attk_or_block:
             if piece not in bo.invalid_lst:
                 if piece.isSelected(mouse_pos):
-                    print("yeah")
+                    #print("yeah")
                     set_piece_to_move(piece, piece_to_move, piece_attk_or_block[piece], [], invalid_move)
                     
 
     
     # block_check = handle_check_and_invalid(only_moves, piece_to_move, mouse_pos, invalid)
 
-    # print(piece_to_move)
+    # #print(piece_to_move)
         
     # return block_check
             
@@ -246,7 +248,10 @@ def toggle_show_moves(piece_to_move):
 
     for piece in piece_to_move:
         for move in piece_to_move[piece]:   
-            bo.lst_tiles[move].toggle_highlight()
+            bo.lst_tiles[move].toggle_highlight(toggle_hint = False)
+    
+    # for pos in h_moves:
+    #     bo.lst_tiles[pos].toggle_highlight(False)
 
 
 def make_move(piece, lost_pieces, tile, invalid, attack, p):
@@ -287,9 +292,9 @@ def handle_piece_movement(piece_to_move, event, lost_pieces):
 
                 # if invalid:
                 #     continue
-            # print(invalid)
-            # print(p)
-            # print(bo.board)
+            # #print(invalid)
+            # #print(p)
+            # #print(bo.board)
             if event.button == 1 and tile.clicked(event.pos) and tile.highlight and not(invalid):
 
                 # piece.rect_i.x = tile.rect.x
@@ -298,14 +303,15 @@ def handle_piece_movement(piece_to_move, event, lost_pieces):
 
             
                 rook = bo.castle(piece, move)
-                print(rook)
+                #print(rook)
                 
                 if rook is not None:
                     pos = rook.get_pos()
                     til = bo.lst_tiles[pos]
                     des = [til.rect.x, til.rect.y]
-                    print("castle")
+                    #print("castle")
                     piece.animate_piece_movement(destination, win, redraw_gameWindow, bo)
+                    bo.post_castle()
                     rook.animate_piece_movement(des, win, redraw_gameWindow, bo)
 
                 if rook is None:
@@ -375,7 +381,7 @@ def  handle_check_and_invalid(only_moves, piece_to_move, mouse_pos, invalid):
         if (p.color == bo.turn and bo.check and p.isSelected(mouse_pos)) or (pos in invalid):
             # piece_to_move[piece]  = only_moves[piece]
             invalid_move = False
-            print("active")
+            #print("active")
             set_piece_to_move(p, piece_to_move, only_moves[p], [], invalid_move)
             items = tuple(piece_to_move.items())
 
@@ -389,8 +395,8 @@ def reset_piece_state(piece):
     piece.first = False
 
 def toggle_piece_attack(piece):
-    # print("attack")
-    # print()
+    # #print("attack")
+    # #print()
     for attack in piece.attack_moves:
         bo.lst_tiles[attack].attack_highlight()
     
@@ -420,10 +426,15 @@ def handle_sound(event):
     
     elif event.type == bo.game_end()[0]:
         bo.game_end()[1].play()
+        
 
-
-
-
+async def calculate():
+    my_piece, b_m = get_piece_and_best_move(bo)
+    if isinstance(my_piece, Piece):
+        current_pos = my_piece.get_pos()
+        
+    h_moves.add(current_pos)
+    h_moves.add(b_m)
 
 
 async def main():
@@ -436,6 +447,9 @@ async def main():
     piece_to_move = {}
     lost_pieces = []
     start = True
+    switch = False
+    move_interval = 2000
+    last_move_time = pygame.time.get_ticks()
     
 
 
@@ -447,7 +461,7 @@ async def main():
         try:
             redraw_gameWindow(win, bo)
         except Exception as e:
-            print(e)
+            #print(e)
             end_screen(win, "Other player left")
             run = False
             break
@@ -468,38 +482,62 @@ async def main():
         #     pygame.time.delay(2000)
         #     end_screen(win, "Black is the winner")
         #     run = False
+        current_time = pygame.time.get_ticks()
 
 
 
         if not(player_color):
-            if bo.turn == "b" and bo.winner == None:
-                p, best_move = get_piece_and_best_move(bo)
-                # pygame.time.delay(400)
+            if current_time - last_move_time >= move_interval: 
+                if bo.turn == "b" and bo.winner == None:
+                    p, best_move = get_piece_and_best_move2(bo)
+                    # pygame.time.delay(400)
+                    if p is not None:
+                        bo.simulate_move(p, best_move, redraw_gameWindow, win)
+                
+                        current_player_idx = handle_player_turn(players, current_player_idx)
+                        current_player = players[current_player_idx]
+                        bo.turn = current_player.color
+                        bo.is_checked(bo.turn)
+                        bo.update_moves()
 
-                if p is not None:
-                    await bo.simulate_move(p, best_move, redraw_gameWindow, win)
+                
+
+                elif bo.turn == "w" and bo.winner == None:
+                    p, best_move = get_piece_and_best_move(bo) 
+
+                    if p is not None:
+                        # pygame.time.delay(300)
+                        bo.simulate_move(p, best_move, redraw_gameWindow, win)
+                
+                        current_player_idx = handle_player_turn(players, current_player_idx)
+                        current_player = players[current_player_idx]
+                        bo.turn = current_player.color
+                        bo.is_checked(bo.turn) 
+                        bo.update_moves()
+                
+                last_move_time = current_time
+
+                # score, lst = minimax(bo, 1, float("-inf"), float("inf"), bo.turn)
+                # m_p = lst[0]
+                # best_move = lst[2]
             
-                    current_player_idx = handle_player_turn(players, current_player_idx)
-                    current_player = players[current_player_idx]
-                    bo.turn = current_player.color
-                    bo.is_checked(bo.turn)
-                    bo.update_moves()
+                # #print(score, "score")
+                # #print(best_move, "best")
 
-            
-                    
+                # if m_p is not None: 
+                #     row, col = m_p.get_pos()
+                #     #print(row, col, "piece")
+                #     piece_  = bo.get_piece(row, col)
 
-            if bo.turn == "w" and bo.winner == None:
-                p, best_move = get_piece_and_best_move2(bo) 
+                #     bo.simulate_move(piece_, best_move, redraw_gameWindow, win)
+                #     #print("mini_max")
 
-                if p is not None:
-                    # pygame.time.delay(300)
-                    await bo.simulate_move(p, best_move, redraw_gameWindow, win)
-            
-                    current_player_idx = handle_player_turn(players, current_player_idx)
-                    current_player = players[current_player_idx]
-                    bo.turn = current_player.color
-                    bo.is_checked(bo.turn)
-                    bo.update_moves()
+                #     current_player_idx = handle_player_turn(players, current_player_idx)
+                #     current_player = players[current_player_idx]
+                #     bo.turn = current_player.color
+                #     bo.is_checked(bo.turn)
+                #     bo.update_moves()
+
 
         
         for event in pygame.event.get():
@@ -526,15 +564,19 @@ async def main():
             
             elif event.type == bo.game_end()[0]:
                 bo.game_end()[1].play()
+            
+            elif event.type == bo.castle_sound()[0]:
+                bo.castle_sound()[1].play()
+        
 
             
             if player_color:
                 if bo.turn != player_color and bo.winner == None:
-                    p, best_move = get_piece_and_best_move(bo)
+                    p, best_move = get_piece_and_best_move3(bo)
                     # pygame.time.delay(400)
 
                     if p is not None:
-                        await bo.simulate_move(p, best_move, redraw_gameWindow, win)
+                        bo.simulate_move(p, best_move, redraw_gameWindow, win)
                 
                         current_player_idx = handle_player_turn(players, current_player_idx)
                         current_player = players[current_player_idx]
@@ -545,12 +587,16 @@ async def main():
             
 
                 if event.type == pygame.MOUSEBUTTONDOWN and bo.turn == player_color:
+                        # null = await calculate()
+                        
+
                         if event.button == 3:  
-                            # print("hi")
-                            handle_player_pieces(current_player, event.pos, piece_to_move)
+                            # #print("hi")
+                            handle_player_pieces(current_player, event.pos, piece_to_move) 
                             toggle_show_moves(piece_to_move)
 
                         moved = handle_piece_movement(piece_to_move, event, lost_pieces)
+
                         if moved:
                             current_player_idx = handle_player_turn(players, current_player_idx)
                             current_player = players[current_player_idx]
@@ -561,7 +607,7 @@ async def main():
 
                             # if bo.check:
                             #      only_moves, _ = bo.simulate_move(bo.turn)
-                            
+                             
                             # else:
                             #     only_moves.clear()
                             for piece in bo.prevent_block[:]:
@@ -569,7 +615,7 @@ async def main():
                                             for direc in bo.path:
                                                 if move not in direc and move in piece.move_list:
                                                     piece.move_list.remove(move)
-                                                    print(move, "removed....")
+                                                    #print(move, "removed....")
                                     
                                     if len(piece.move_list):
                                         bo.prevent_block.remove(piece)
@@ -577,26 +623,32 @@ async def main():
                             
 
                         # only_moves, invalid_p = bo.simulate_move(bo.turn)
-                        # print(invalid_p)
+                        # #print(invalid_p)
             # handle_sound(event)
-
+        
         
         if bo.winner == "w":
-            pygame.time.delay(5000)
+            pygame.time.delay(10000)
             end_screen(win, "White is the Winner!")
             run = False
         
 
-        if bo.winner == "b":
-            pygame.time.delay(5000)
+        elif bo.winner == "b":
+            pygame.time.delay(10000)
             end_screen(win, "Black is the winner")
             run = False
-            
-
+        
+       
+        elif bo.stalemate:
+            pygame.time.delay(10000)
+            end_screen(win, "Draw by Stalemate!")
+            run = False
+        
+        
         if bo.check:
             checking = bo.checking_piece
             piece_attk_or_block = checking.possible_opp_block_or_attk
-            print(piece_attk_or_block)
+            #print(piece_attk_or_block)
 
             if not(len(piece_attk_or_block)) and bo.king_trapped():
                 bo.post_end()
@@ -607,13 +659,14 @@ async def main():
                 else:
                     bo.winner = "w"
 
+        bo.is_stalemate()
         # pygame.time.delay(1000)      
        
                 
         # # try:
-        #     redraw_gameWindow(win, color)
+        #     redraw_gameWindow(win, bo)
         # except Exception as e:
-        #     print(e)
+        #     #print(e)ss
         #     end_screen(win, "Other player left")
         #     run = False
         #     break
@@ -626,12 +679,19 @@ async def main():
 
 # name = input("Please type your name: ")
 while True:
-    player_color = input("Select player color(w or b) press enter to watch gameplay: ")
+    player_color = input("Select player color(w or b) press enter to watch gameplay: ").lower()
 
-    if not(player_color) or player_color.lower() in ["w", "b"]:
+    if not(player_color) or player_color in ["w", "b"]:
+        
+        # if player_color == "b":
+        #    bo.flip(player_color)
+
         break
 
 pygame.display.set_caption("Chess Game")
-# menu_screen(win, name)
 asyncio.run(main())
+# menu_screen(win, name)s
+# for _ in range(3):
+#     asyncio.run(main())
+#     bo = Board(8, 8)
  
